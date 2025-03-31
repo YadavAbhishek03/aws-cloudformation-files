@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: A basic EC2 instance with a security group.
+
+Resources:
+  MyVPC:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      CidrBlock: '192.168.0.0/16'  # Ensure this CIDR block doesn’t conflict with existing networks
+      EnableDnsSupport: 'true'
+      EnableDnsHostnames: 'true'
+
+  MySubnet:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref MyVPC
+      CidrBlock: '192.168.1.0/24'  # Define a subnet CIDR block
+      AvailabilityZone: !Select [ 0, !GetAZs 'ap-south-1' ]  # Use the first AZ in Mumbai region
+      MapPublicIpOnLaunch: 'true'
+
+  MySecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: 'Allow SSH and HTTP access'
+      VpcId: !Ref MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: 'tcp'
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: '0.0.0.0/0'  # Allow SSH from anywhere
+        - IpProtocol: 'tcp'
+          FromPort: '80'
+          ToPort: '80'
+          CidrIp: '0.0.0.0/0'  # Allow HTTP from anywhere
+
+  MyEC2Instance:
+    Type: 'AWS::EC2::Instance'
+    Properties:
+      InstanceType: 't2.micro'
+      ImageId: 'ami-0e35ddab05955cf57'  # Replace with your region's Amazon Linux 2 AMI ID
+      SecurityGroupIds:
+        - !Ref MySecurityGroup
+      SubnetId: !Ref MySubnet  # Reference the SubnetId created above
+      KeyName: 'your-key-name'  # Replace with your EC2 key pair name
+
+Outputs:
+  InstanceId:
+    Description: 'Instance ID'
+    Value: !Ref MyEC2Instance
